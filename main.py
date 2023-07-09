@@ -15,13 +15,14 @@ class Jitter:
 
     def _sample_triangular(self, extent: float) -> float:
         random_num = np.random.rand()
+        return random_num * 2 * extent - extent 
         if random_num < 0.5:
             return -extent + np.sqrt(random_num * 2 * extent**2)
         else:
             return extent - np.sqrt((1 - random_num) * 2 * extent**2)
 
     def get_jitter(self) -> int:
-        extent = 4
+        extent = 8.5
         sample = self._sample_triangular(extent)
         sample = int(np.rint(sample))
 

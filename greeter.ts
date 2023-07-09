@@ -1,16 +1,52 @@
-const element = document.getElementById("block");
-let start: DOMHighResTimeStamp, previousTimeStamp: DOMHighResTimeStamp;
+class Jitter {
+    currentJitter: number = 0
 
+    sampleUniform(range: number): number {
+        return 2 * Math.random() * range - range;
+    }
+
+    getJitter() {
+        let range = 8
+        let sample = this.sampleUniform(range + 0.5)
+        sample = Math.round(sample)
+
+        if (sample < this.currentJitter) {
+            this.currentJitter = Math.max(this.currentJitter - 1, -range)
+        }
+        else if (sample > this.currentJitter) {
+            this.currentJitter = Math.min(this.currentJitter + 1, range)
+        }
+        return this.currentJitter
+    }
+}
+
+const element = document.getElementById("block");
 const slide = document.getElementById('slide');
 const sliderDiv = document.getElementById("sliderAmount");
-let heartRate = (slide) ? +(slide as HTMLInputElement).value : 60;
+const currentHeartRateDiv = document.getElementById("currentHeartRate");
+
+let startTime: DOMHighResTimeStamp = 0;
+let heartBeatStartTime: DOMHighResTimeStamp = 0;
+let heartBeatEndTime: DOMHighResTimeStamp = 0;
+
+let sDuration = 0;
+let dDuration = 0;
+let beatDuration = sDuration + dDuration;
+
+const jitter = new Jitter();
+let jitterArray: Array<number> = Array<number>();
+for (let i = 0; i < 5000; i++) {
+    jitterArray.push(jitter.getJitter())
+}
+
+let heartRateBaseline = (slide) ? +(slide as HTMLInputElement).value : 60;
+let heartRate: number = heartRateBaseline
 
 slide!.oninput = (event) => {
-    if (slide)
-    {
+    if (slide) {
         let value = (slide as HTMLInputElement).value;
-        sliderDiv!.innerHTML = value;
-        heartRate = +value;
+        if (sliderDiv) sliderDiv.innerHTML = "Heart rate baseline: " + value;
+        heartRateBaseline = +value;
     }
 }
 
@@ -23,34 +59,30 @@ function diastoleDuration(heartRate: number): number {
 }
 
 function step(timeStamp: DOMHighResTimeStamp) {
-    if (start === undefined) {
-        start = timeStamp;
-        previousTimeStamp = timeStamp;
+    if (startTime === undefined) {
+        startTime = timeStamp;
+        heartBeatStartTime = timeStamp - 1;
     }
 
-    const sDuration = systoleDuration(heartRate);
-    const dDuration = diastoleDuration(heartRate);
-    const beatDuration = sDuration + dDuration;
+    while (timeStamp > heartBeatStartTime + beatDuration) {
+        // Start time of next beat
+        heartBeatStartTime += beatDuration;
 
-    if (timeStamp > (previousTimeStamp + beatDuration)) {
-        const elapsed = (timeStamp - previousTimeStamp) % beatDuration;
-        previousTimeStamp = Math.floor((timeStamp - previousTimeStamp) / beatDuration);
+        // Duration of next beat
+        const index = Math.floor(heartBeatStartTime / 1000.0);
+        heartRate = heartRateBaseline + jitterArray[index];
+        sDuration = systoleDuration(heartRate);
+        dDuration = diastoleDuration(heartRate);
+        beatDuration = sDuration + dDuration;
 
-        if (elapsed < sDuration) {
-            element!.style.backgroundColor = "red";
-        }
-        else {
-            element!.style.backgroundColor = "white";
-        }
+        if (currentHeartRateDiv) currentHeartRateDiv.innerHTML = "Current heart rate: " + heartRate; 
+    }
+
+    if (timeStamp < (heartBeatStartTime + sDuration)) {
+        if (element) element.style.backgroundColor = "red";
     }
     else {
-        const elapsed = (timeStamp - previousTimeStamp) % beatDuration;
-        if (elapsed < sDuration) {
-            element!.style.backgroundColor = "red";
-        }
-        else {
-            element!.style.backgroundColor = "white";
-        }
+        if (element) element.style.backgroundColor = "white";
     }
 
     window.requestAnimationFrame(step);
