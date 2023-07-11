@@ -1,4 +1,3 @@
-"use strict";
 var Jitter = /** @class */ (function () {
     function Jitter() {
         this.currentJitter = 0;
@@ -60,7 +59,7 @@ function step(timeStamp) {
         // Start time of next beat
         heartBeatStartTime += beatDuration;
         // Duration of next beat
-        var index = Math.floor(heartBeatStartTime / 1000.0);
+        var index = Math.floor(heartBeatStartTime / 2000.0);
         heartRate = heartRateBaseline + jitterArray[index];
         sDuration = systoleDuration(heartRate);
         dDuration = diastoleDuration(heartRate);

@@ -69,7 +69,7 @@ function step(timeStamp: DOMHighResTimeStamp) {
         heartBeatStartTime += beatDuration;
 
         // Duration of next beat
-        const index = Math.floor(heartBeatStartTime / 1000.0);
+        const index = Math.floor(heartBeatStartTime / 2000.0);
         heartRate = heartRateBaseline + jitterArray[index];
         sDuration = systoleDuration(heartRate);
         dDuration = diastoleDuration(heartRate);
